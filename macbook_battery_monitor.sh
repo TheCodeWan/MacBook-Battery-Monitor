@@ -52,18 +52,43 @@ get_power_draw() {
 }
 
 get_thermal() {
-    # Try numeric temperature first (works on most M-series Macs)
-    TEMP_C=$(powermetrics --samplers smc --sample-count 1 2>/dev/null | \
-        grep -i "die temperature" | head -1 | awk '{print $(NF-1)}' | tr -d 'C')
+    local smc_out thermal_out temp_c pressure
 
-    if [[ -n "$TEMP_C" && "$TEMP_C" =~ ^[0-9.]+$ ]]; then
-        TEMP_F=$(echo "scale=1; $TEMP_C * 9/5 + 32" | bc 2>/dev/null)
-        TEMP_DISPLAY="${TEMP_F}°F"
+    # === Try numeric die temperature first (works on many Intel + some M-series Macs) ===
+    if [[ "$EUID" -eq 0 ]]; then
+        smc_out=$(powermetrics --samplers smc --sample-count 1 2>/dev/null)
     else
-        # Fallback to Thermal Pressure (your A18 Pro / newer chips)
-        TEMP_DISPLAY=$(powermetrics --samplers thermal --sample-count 1 2>/dev/null | \
-            awk -F': ' '/pressure level/ {print $NF}' | xargs)
-        [[ -z "$TEMP_DISPLAY" ]] && TEMP_DISPLAY="N/A"
+        smc_out=$(sudo -n powermetrics --samplers smc --sample-count 1 2>/dev/null)
+    fi
+
+    temp_c=$(echo "$smc_out" | grep -i "die temperature" | head -1 | awk '{print $(NF-1)}' | tr -d 'C')
+
+    if [[ -n "$temp_c" && "$temp_c" =~ ^[0-9.]+$ ]]; then
+        TEMP_F=$(echo "scale=1; $temp_c * 9/5 + 32" | bc 2>/dev/null)
+        TEMP_DISPLAY="${temp_c}°C (${TEMP_F}°F)"
+        return
+    fi
+
+    # === Fallback: Thermal pressure level (reliable on A18 Pro / modern Apple Silicon) ===
+    if [[ "$EUID" -eq 0 ]]; then
+        thermal_out=$(powermetrics --samplers thermal --sample-count 1 2>/dev/null)
+    else
+        thermal_out=$(sudo -n powermetrics --samplers thermal --sample-count 1 2>/dev/null)
+    fi
+
+    pressure=$(echo "$thermal_out" | awk -F': ' '/[Cc]urrent [Pp]ressure [Ll]evel/ || /[Pp]ressure [Ll]evel/ {print $NF}' | head -1 | xargs)
+
+    if [[ -n "$pressure" ]]; then
+        TEMP_DISPLAY="$pressure"
+    else
+        # Last-resort: any numeric temperature anywhere in the output
+        temp_c=$(echo "$thermal_out $smc_out" | grep -iE 'temperature|temp|die' | head -1 | awk '{print $(NF-1)}' | tr -d 'C°' | xargs)
+        if [[ -n "$temp_c" && "$temp_c" =~ ^[0-9.]+$ ]]; then
+            TEMP_F=$(echo "scale=1; $temp_c * 9/5 + 32" | bc 2>/dev/null)
+            TEMP_DISPLAY="${temp_c}°C (${TEMP_F}°F)"
+        else
+            TEMP_DISPLAY="N/A"
+        fi
     fi
 }
 
