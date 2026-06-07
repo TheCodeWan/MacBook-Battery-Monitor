@@ -60,7 +60,7 @@ get_power_draw() {
 if [[ "$amp" -eq 0 ]]; then 
     POWER_W="0 W (AC)"
 else
-            amp_abs=${amp#-}; POWER_W=$(echo "scale=1; $vol * $amp_abs / 1000000" | bc 2>/dev/null)
+            amp_abs=${amp#-}; POWER_W=$(echo "scale=1; $vol * $amp_abs / 1000000" | bc 2>/dev/null) W
             [[ -z "$POWER_W" || "$POWER_W" == "0.0" ]] && POWER_W="0 (AC)"
         fi
     else POWER_W=""; fi
@@ -125,7 +125,7 @@ Last Updated: $TIMESTAMP
 
 • Status: $STATUS
 
-• Power Draw: ${POWER_W} W
+• Power Draw: ${POWER_W}
 
 • Temperature: $TEMP_DISPLAY
 
