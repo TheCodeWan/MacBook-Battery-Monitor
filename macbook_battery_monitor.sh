@@ -97,20 +97,24 @@ while true; do
     get_battery_info; get_power_draw; get_thermal
     LOW_POWER=$(pmset -g 2>/dev/null | awk '/lowpowermode/ {print $2}')
     LOW_POWER_STATUS=$([[ "$LOW_POWER" == "1" ]] && echo "On" || echo "Off")
-    cat > "$OUTPUT_FILE" << EOF
+cat > "$OUTPUT_FILE" << EOF
 Last Updated: $TIMESTAMP
+
 • Battery: $PERCENT
+
 • Status: $STATUS
+
 • Power Draw: ${POWER_W} W
+
 • Temperature: $TEMP_DISPLAY
+
 • Low Power Mode: $LOW_POWER_STATUS
 EOF
-    [[ -n "$TIME_LINE" ]] && { echo "" >> "$OUTPUT_FILE"; echo "• $TIME_LINE" >> "$OUTPUT_FILE"; }
-    if [[ "$EUID" -eq 0 ]]; then
-        REAL_USER=$(stat -f %Su /dev/console); chown "$REAL_USER:staff" "$OUTPUT_FILE" 2>/dev/null
-    else
-        chown "$USER:staff" "$OUTPUT_FILE" 2>/dev/null
-    fi
+
+if [[ -n "$TIME_LINE" ]]; then
+    echo "" >> "$OUTPUT_FILE"
+    echo "• $TIME_LINE" >> "$OUTPUT_FILE"
+fi
     chmod 644 "$OUTPUT_FILE" 2>/dev/null
     sleep $UPDATE_INTERVAL
 done
