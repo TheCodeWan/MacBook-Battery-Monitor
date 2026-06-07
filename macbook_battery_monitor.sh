@@ -32,14 +32,14 @@ get_battery_info() {
         if [[ "$REMAINING" =~ ([0-9]+):([0-9]+) ]]; then
             TIME_LINE="Battery life remaining: ${BASH_REMATCH[1]}h ${BASH_REMATCH[2]}m"
         else
-            TIME_LINE=""
+            TIME_LINE="Battery life remaining: N/A"
         fi
     elif [[ "$STATUS" == "charging" ]]; then
         REMAINING=$(echo "$batt" | grep -oE '[0-9]+:[0-9]+[[:space:]]+remaining' | head -1)
         if [[ "$REMAINING" =~ ([0-9]+):([0-9]+) ]]; then
             TIME_LINE="Time to full: ${BASH_REMATCH[1]}h ${BASH_REMATCH[2]}m"
         else
-            TIME_LINE=""
+            TIME_LINE="Time to full: N/A"
         fi
     else
         TIME_LINE=""
