@@ -57,7 +57,7 @@ get_power_draw() {
     amp=$(echo "$info" | grep '"Amperage" = ' | grep -oE '[0-9]+' | head -1)
     if [[ -n "$vol" && -n "$amp" && "$vol" -gt 0 ]]; then
         [[ "$amp" -gt $((2**63)) ]] && amp=$((amp - 2**64))
-        if [[ "$amp" -eq 0 ]]; then POWER_W="0 (AC)"; else
+if [[ "$amp" -eq 0 ]]; then POWER_W="0 W (AC)"; else
             amp_abs=${amp#-}; POWER_W=$(echo "scale=1; $vol * $amp_abs / 1000000" | bc 2>/dev/null)
             [[ -z "$POWER_W" || "$POWER_W" == "0.0" ]] && POWER_W="0 (AC)"
         fi
