@@ -28,18 +28,18 @@ get_battery_info() {
     if [[ "$PERCENT" == "100%" || "$STATUS" == "charged" ]]; then
         TIME_LINE="Fully charged"
     elif [[ "$STATUS" == "discharging" ]]; then
-        REMAINING=$(echo "$batt" | grep -o '[0-9]*:[0-9]* remaining' | head -1)
+        REMAINING=$(echo "$batt" | grep -oE '[0-9]+:[0-9]+[[:space:]]+remaining' | head -1)
         if [[ "$REMAINING" =~ ([0-9]+):([0-9]+) ]]; then
             TIME_LINE="Battery life remaining: ${BASH_REMATCH[1]}h ${BASH_REMATCH[2]}m"
         else
-            TIME_LINE="Battery life remaining: $REMAINING"
+            TIME_LINE=""
         fi
     elif [[ "$STATUS" == "charging" ]]; then
-        REMAINING=$(echo "$batt" | grep -o '[0-9]*:[0-9]* remaining' | head -1)
+        REMAINING=$(echo "$batt" | grep -oE '[0-9]+:[0-9]+[[:space:]]+remaining' | head -1)
         if [[ "$REMAINING" =~ ([0-9]+):([0-9]+) ]]; then
             TIME_LINE="Time to full: ${BASH_REMATCH[1]}h ${BASH_REMATCH[2]}m"
         else
-            TIME_LINE="Time to full: $REMAINING"
+            TIME_LINE=""
         fi
     else
         TIME_LINE=""
