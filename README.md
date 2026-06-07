@@ -1,2 +1,4 @@
 # MacBook-Battery-Monitor
 This is a script which is designed to pull important battery stats from your MacBook and save them to an iCloud file that updates once a minute. That way, you can check on your Mac battery remotely using any other device that has access to iCloud syncing, including your iPhones. 
+
+all you have to do to start the script is copy the entire contents of `macbook-battery-monitor.sh` and paste it into your Terminal, 
