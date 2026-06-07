@@ -76,6 +76,16 @@ get_power_draw() {
             POWER_W=$(sudo -n powermetrics --samplers cpu_power,gpu_power,ane_power --sample-count 1 2>/dev/null | awk '/ mW/ {sum += $(NF-1)} END {if (sum > 0) printf "%.1f W", sum/1000; else print "N/A"}')
         fi
     fi
+
+    # Charger Wattage (only when actually charging)
+    CHARGER_WATTAGE=""
+    if [[ "$STATUS" == "charging" ]]; then
+        if [[ "$EUID" -eq 0 ]]; then
+            CHARGER_WATTAGE=$(powermetrics --samplers cpu_power,gpu_power,ane_power --sample-count 1 2>/dev/null | awk '/ mW/ {sum += $(NF-1)} END {if (sum > 0) printf "%.1f W", sum/1000; else print ""}')
+        else
+            CHARGER_WATTAGE=$(sudo -n powermetrics --samplers cpu_power,gpu_power,ane_power --sample-count 1 2>/dev/null | awk '/ mW/ {sum += $(NF-1)} END {if (sum > 0) printf "%.1f W", sum/1000; else print ""}')
+        fi
+    fi
 }
 
 get_thermal() {
@@ -119,6 +129,10 @@ get_thermal() {
 while true; do
     TIMESTAMP=$(date "+%Y-%m-%d %I:%M:%S %p")
     get_battery_info; get_power_draw; get_thermal
+
+    CHARGER_LINE=""
+    [[ -n "$CHARGER_WATTAGE" ]] && CHARGER_LINE="• Charger Wattage: $CHARGER_WATTAGE"
+
     LOW_POWER=$(pmset -g 2>/dev/null | awk '/lowpowermode/ {print $2}')
     LOW_POWER_STATUS=$([[ "$LOW_POWER" == "1" ]] && echo "On" || echo "Off")
 cat > "$OUTPUT_FILE" << EOF
@@ -130,6 +144,8 @@ Last Updated: $TIMESTAMP
 • Status: $STATUS
 
 • Power Draw: ${POWER_W}
+
+$CHARGER_LINE
 
 • Temperature: $TEMP_DISPLAY
 
