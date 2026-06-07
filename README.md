@@ -3,4 +3,4 @@ This is a script that is designed to run in the background and pull important ba
 
 All you have to do to start the script is copy the entire raw contents of `macbook_battery_monitor.sh` and paste it into your Terminal, press Enter, possibly put in your password and press Enter again (the script uses some `sudo` commands to get battery data), and then you are good to go! 
 
-You can stop the script at any time by putting in `pkill 
+You can stop the script at any time by putting in `pkill -f battery_monitor.sh`.
