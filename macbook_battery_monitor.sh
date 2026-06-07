@@ -52,11 +52,17 @@ get_power_draw() {
 }
 
 get_thermal() {
-    TEMP_C=$(powermetrics --samplers smc --sample-count 1 2>/dev/null | grep -i "die temperature" | head -1 | awk '{print $(NF-1)}' | tr -d 'C')
+    # Try numeric temperature first (M-series)
+    TEMP_C=$(powermetrics --samplers smc --sample-count 1 2>/dev/null | \
+        grep -i "die temperature" | head -1 | awk '{print $(NF-1)}' | tr -d 'C')
+
     if [[ -n "$TEMP_C" && "$TEMP_C" =~ ^[0-9.]+$ ]]; then
-        TEMP_F=$(echo "scale=1; $TEMP_C * 9/5 + 32" | bc 2>/dev/null); TEMP_DISPLAY="${TEMP_F}°F"
+        TEMP_F=$(echo "scale=1; $TEMP_C * 9/5 + 32" | bc 2>/dev/null)
+        TEMP_DISPLAY="${TEMP_F}°F"
     else
-        TEMP_DISPLAY=$(powermetrics --samplers thermal --sample-count 1 2>/dev/null | grep -i "pressure level" | head -1 | awk -F': ' '{print $2}' | xargs)
+        # Fallback to Thermal Pressure (your A18 Pro)
+        TEMP_DISPLAY=$(powermetrics --samplers thermal --sample-count 1 2>/dev/null | \
+            grep -i "pressure level" | head -1 | sed 's/.*: //' | xargs)
         [[ -z "$TEMP_DISPLAY" ]] && TEMP_DISPLAY="N/A"
     fi
 }
