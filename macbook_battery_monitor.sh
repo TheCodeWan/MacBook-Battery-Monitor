@@ -4,6 +4,13 @@ cat > ~/battery_monitor.sh << 'ENDOFSCRIPT'
 if [[ "$1" != "--daemon" ]]; then
     sudo -v || exit 1
     nohup "$0" --daemon > /dev/null 2>&1 &
+    STATUS_FILE="$HOME/Library/Mobile Documents/com~apple~CloudDocs/Mac_Battery_Status.txt"
+    osascript -e '
+    tell application "Terminal"
+        activate
+        do script "tail -f \"'"$STATUS_FILE"'\""
+    end tell
+    ' >/dev/null 2>&1
     echo "✅ Battery monitor started in background. Updates iCloud file every minute."
     echo "Stop it later with: pkill -f battery_monitor.sh"
     exit 0
