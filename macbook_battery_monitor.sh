@@ -15,6 +15,7 @@ fi
 
 OUTPUT_FILE="$HOME/Library/Mobile Documents/com~apple~CloudDocs/Mac_Battery_Status.txt"
 UPDATE_INTERVAL=60
+MAC_NAME=$(scutil --get ComputerName 2>/dev/null || echo "Unknown Mac")
 
 if pgrep -f "$(basename "$0")" | grep -v $$ > /dev/null; then exit 0; fi
 
@@ -115,6 +116,7 @@ while true; do
     LOW_POWER=$(pmset -g 2>/dev/null | awk '/lowpowermode/ {print $2}')
     LOW_POWER_STATUS=$([[ "$LOW_POWER" == "1" ]] && echo "On" || echo "Off")
 cat > "$OUTPUT_FILE" << EOF
+$MAC_NAME
 Last Updated: $TIMESTAMP
 
 • Battery: $PERCENT
