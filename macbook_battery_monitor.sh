@@ -55,22 +55,26 @@ get_power_draw() {
     local info vol amp; info=$(ioreg -w 0 -f -r -c AppleSmartBattery 2>/dev/null)
     vol=$(echo "$info" | grep '"Voltage" = ' | grep -oE '[0-9]+' | head -1)
     amp=$(echo "$info" | grep '"Amperage" = ' | grep -oE '[0-9]+' | head -1)
+
     if [[ -n "$vol" && -n "$amp" && "$vol" -gt 0 ]]; then
         [[ "$amp" -gt $((2**63)) ]] && amp=$((amp - 2**64))
-if [[ "$amp" -eq 0 ]]; then 
-    POWER_W="0 W (AC)"
-else
-            amp_abs=${amp#-}; POWER_W=$(echo "scale=1; $vol * $amp_abs / 1000000" | bc 2>/dev/null) W
-            [[ -z "$POWER_W" || "$POWER_W" == "0.0" ]] && POWER_W="0 (AC)"
+        if [[ "$amp" -eq 0 ]]; then
+            POWER_W="0 W (AC)"
+        else
+            amp_abs=${amp#-}
+            val=$(echo "scale=1; $vol * $amp_abs / 1000000" | bc 2>/dev/null)
+            POWER_W="${val} W"
         fi
-    else POWER_W=""; fi
+    else
+        POWER_W=""
+    fi
+
     if [[ -z "$POWER_W" ]]; then
         if [[ "$EUID" -eq 0 ]]; then
-            POWER_W=$(powermetrics --samplers cpu_power,gpu_power,ane_power --sample-count 1 2>/dev/null | awk '/ mW/ {sum += $(NF-1)} END {if (sum > 0) printf "%.1f", sum/1000; else print "N/A"}')
+            POWER_W=$(powermetrics --samplers cpu_power,gpu_power,ane_power --sample-count 1 2>/dev/null | awk '/ mW/ {sum += $(NF-1)} END {if (sum > 0) printf "%.1f W", sum/1000; else print "N/A"}')
         else
-            POWER_W=$(sudo -n powermetrics --samplers cpu_power,gpu_power,ane_power --sample-count 1 2>/dev/null | awk '/ mW/ {sum += $(NF-1)} END {if (sum > 0) printf "%.1f", sum/1000; else print "N/A"}')
+            POWER_W=$(sudo -n powermetrics --samplers cpu_power,gpu_power,ane_power --sample-count 1 2>/dev/null | awk '/ mW/ {sum += $(NF-1)} END {if (sum > 0) printf "%.1f W", sum/1000; else print "N/A"}')
         fi
-        [[ -z "$POWER_W" ]] && POWER_W="N/A"
     fi
 }
 
