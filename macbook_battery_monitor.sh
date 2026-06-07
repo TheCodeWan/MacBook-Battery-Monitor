@@ -3,7 +3,11 @@ cat > ~/battery_monitor.sh << 'ENDOFSCRIPT'
 #!/bin/bash
 if [[ "$1" != "--daemon" ]]; then
     sudo -v || exit 1
+
+    pkill -f battery_monitor.sh 2>/dev/null || true
+
     nohup "$0" --daemon > /dev/null 2>&1 &
+
     echo "✅ Battery monitor started in background. Updates iCloud file every minute."
     echo "Stop it later with: pkill -f battery_monitor.sh"
     exit 0
@@ -70,7 +74,6 @@ get_power_draw() {
 get_thermal() {
     local smc_out thermal_out temp_c pressure
 
-    # === Try numeric die temperature first (works on many Intel + some M-series Macs) ===
     if [[ "$EUID" -eq 0 ]]; then
         smc_out=$(powermetrics --samplers smc --sample-count 1 2>/dev/null)
     else
@@ -85,7 +88,6 @@ get_thermal() {
         return
     fi
 
-    # === Fallback: Thermal pressure level (reliable on A18 Pro / modern Apple Silicon) ===
     if [[ "$EUID" -eq 0 ]]; then
         thermal_out=$(powermetrics --samplers thermal --sample-count 1 2>/dev/null)
     else
@@ -97,7 +99,6 @@ get_thermal() {
     if [[ -n "$pressure" ]]; then
         TEMP_DISPLAY="$pressure"
     else
-        # Last-resort: any numeric temperature anywhere in the output
         temp_c=$(echo "$thermal_out $smc_out" | grep -iE 'temperature|temp|die' | head -1 | awk '{print $(NF-1)}' | tr -d 'C°' | xargs)
         if [[ -n "$temp_c" && "$temp_c" =~ ^[0-9.]+$ ]]; then
             TEMP_F=$(echo "scale=1; $temp_c * 9/5 + 32" | bc 2>/dev/null)
