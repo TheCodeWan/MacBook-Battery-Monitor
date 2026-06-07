@@ -52,7 +52,7 @@ get_power_draw() {
 }
 
 get_thermal() {
-    # Try numeric temperature first (M-series)
+    # Try numeric temperature first (works on most M-series Macs)
     TEMP_C=$(powermetrics --samplers smc --sample-count 1 2>/dev/null | \
         grep -i "die temperature" | head -1 | awk '{print $(NF-1)}' | tr -d 'C')
 
@@ -60,9 +60,9 @@ get_thermal() {
         TEMP_F=$(echo "scale=1; $TEMP_C * 9/5 + 32" | bc 2>/dev/null)
         TEMP_DISPLAY="${TEMP_F}°F"
     else
-        # Fallback to Thermal Pressure (your A18 Pro)
+        # Fallback to Thermal Pressure (your A18 Pro / newer chips)
         TEMP_DISPLAY=$(powermetrics --samplers thermal --sample-count 1 2>/dev/null | \
-            grep -i "pressure level" | head -1 | sed 's/.*: //' | xargs)
+            awk -F': ' '/pressure level/ {print $NF}' | xargs)
         [[ -z "$TEMP_DISPLAY" ]] && TEMP_DISPLAY="N/A"
     fi
 }
